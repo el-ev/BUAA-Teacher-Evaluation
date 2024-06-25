@@ -1,37 +1,13 @@
 import time
 import requests
-from bs4 import BeautifulSoup
 from getpass import getpass
 from urllib.parse import quote
 from form import fill_form
+from login import login
 
 session = requests.Session()
 
 pjxt_url = "https://spoc.buaa.edu.cn/pjxt/"
-login_url = 'https://sso.buaa.edu.cn/login?service=' \
-            + quote(pjxt_url, 'utf-8') + 'cas'
-
-
-def get_token() -> str:
-    response = session.get(login_url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    token = soup.find('input', {'name': 'execution'})['value']
-    return token
-
-
-def login(username: str, password: str) -> bool:
-    form = {
-        'username': username,
-        'password': password,
-        'execution': get_token(),
-        '_eventId': 'submit',
-        'type': 'username_password',
-        'submit': "LOGIN"
-    }
-    response = session.post(login_url, data=form, allow_redirects=True)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    return soup.text.find('综合评教系统') != -1
-
 
 def get_latest_task():
     task_list_url = pjxt_url + 'personnelEvaluation/listObtainPersonnelEvaluationTasks?pageNum=1&pageSize=1'
@@ -59,10 +35,12 @@ def set_evaluating_method(qinfo):
         'rwid': qinfo['rwid']
     }
 
-    if qinfo['msid'] == '1' or qinfo['msid'] == '2':
-        response = session.post(revise_url, json=form)
+    if qinfo['msid'] == '1':
+        return
+    if qinfo['msid'] == '2':
+        _response = session.post(revise_url, json=form)
     elif qinfo['msid'] is None:
-        response = session.post(confirm_url, json=form)
+        _response = session.post(confirm_url, json=form)
     else:
         print(f"Unknown msid {qinfo['msid']} for {qinfo['wjmc']}")
         return
@@ -100,7 +78,8 @@ def auto_evaluate():
     if task is None:
         print('No task to evaluate')
         return
-    print(f"Evaluating task {task[1]}")
+    print(f"Evaluating task {task[1]}, press Enter to continue, or Ctrl+C to exit")
+    input()
     q_list = get_questionnaire_list(task[0])
     for q in q_list:
         print(f"Evaluating questionnaire {q['wjmc']}")
@@ -108,6 +87,7 @@ def auto_evaluate():
         c_list = get_course_list(q['wjid'])
         for c in c_list:
             if c['ypjcs'] == c['xypjcs']:
+                print(f"Course {c['kcmc']} has been evaluated, skip")
                 continue
             print(f"Evaluating course {c['kcmc']}")
             evaluate_single_course(c)
@@ -118,7 +98,7 @@ def main():
     username = input('Enter username: ')
     password = getpass('Enter password: ')
     print('Logging in...')
-    if login(username, password):
+    if login(session, pjxt_url + 'cas', username, password):
         print('Login successfully!')
         auto_evaluate()
         print('Evaluation finished!')
