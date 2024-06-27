@@ -101,10 +101,9 @@ def main():
     if login(session, pjxt_url + 'cas', username, password):
         print('Login successfully!')
         auto_evaluate()
-        print('Evaluation finished!')
+        input('Evaluation finished! Press any key to exit...')
     else:
-        print('Login failed!')
-        exit(1)
+        input('Login failed!')
 
 
 if __name__ == '__main__':

@@ -23,4 +23,4 @@ def login(session: requests.Session, target_url: str, username: str, password: s
     }
     response = session.post(target, data=form, allow_redirects=True)
     soup = BeautifulSoup(response.text, 'html.parser')
-    return not soup.findAll('div', class_='error_txt')
+    return soup.text.find('综合评教系统') != -1
