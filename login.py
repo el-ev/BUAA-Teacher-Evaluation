@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import requests
 
 login_url = 'https://sso.buaa.edu.cn/login?service='
+mainpage_url = 'https://spoc.buaa.edu.cn/pjxt/authentication/main'
 
 def get_token(session: requests.Session, target: str) -> str:
     response = session.get(target)
@@ -22,5 +23,4 @@ def login(session: requests.Session, target_url: str, username: str, password: s
         'submit': "LOGIN"
     }
     response = session.post(target, data=form, allow_redirects=True)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    return soup.text.find('综合评教系统') != -1
+    return response.url == mainpage_url
