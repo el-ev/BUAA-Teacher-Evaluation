@@ -3,7 +3,7 @@ import requests
 from getpass import getpass
 from urllib.parse import quote
 from form import fill_form
-from login import login
+from login import login, login_with_cookie
 
 session = requests.Session()
 
@@ -95,15 +95,56 @@ def auto_evaluate():
 
 
 def main():
-    username = input('Enter username: ')
-    password = getpass('Enter password: ')
-    print('Logging in...')
-    if login(session, pjxt_url + 'cas', username, password):
-        print('Login successfully!')
-        auto_evaluate()
-        input('Evaluation finished! Press any key to exit...')
+    print('=' * 50)
+    print('  北航一键评教系统')
+    print('=' * 50)
+    print()
+    print('请选择登录方式:')
+    print('  [1] 用户名+密码登录（默认）')
+    print('  [2] Cookie 登录（在浏览器中手动登录后粘贴 Cookie）')
+    print()
+    choice = input('请输入选项 (1/2): ').strip()
+
+    if choice == '2':
+        # === Cookie 登录模式 ===
+        print()
+        print('=== Cookie 登录说明 ===')
+        print('1. 请用浏览器打开 https://spoc.buaa.edu.cn/pjxt/ 并手动登录')
+        print('2. 登录成功后，按 F12 打开开发者工具')
+        print('3. 切换到 "Application"(应用程序) 或 "Storage"(存储) 标签')
+        print('4. 左侧找到 Cookies -> https://spoc.buaa.edu.cn')
+        print('5. 复制所有 Cookie：可以在控制台(Console)中输入以下命令获取：')
+        print()
+        print('   document.cookie')
+        print()
+        print('6. 将输出的字符串粘贴到下方（格式如 key1=value1; key2=value2）')
+        print('-' * 50)
+        cookie_str = input('请粘贴 Cookie 字符串: ').strip()
+
+        if not cookie_str:
+            print('错误: Cookie 不能为空！')
+            input('按任意键退出...')
+            return
+
+        print('正在验证 Cookie...')
+        if login_with_cookie(session, cookie_str):
+            print('Cookie 验证成功！')
+            auto_evaluate()
+            input('Evaluation finished! Press any key to exit...')
+        else:
+            print('Cookie 验证失败！请确保已正确登录并复制了完整的 Cookie。')
+            input('按任意键退出...')
     else:
-        input('Login failed!')
+        # === 用户名密码登录模式 ===
+        username = input('Enter username: ')
+        password = getpass('Enter password: ')
+        print('Logging in...')
+        if login(session, pjxt_url + 'cas', username, password):
+            print('Login successfully!')
+            auto_evaluate()
+            input('Evaluation finished! Press any key to exit...')
+        else:
+            input('Login failed!')
 
 
 if __name__ == '__main__':
